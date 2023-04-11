@@ -12,13 +12,7 @@ renderer.setSize(window.innerWidth, innerHeight);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-const size = 100;
-const divisions = 10;
-const color1 = 0x000000;  // negro
-const color2 = 0xffffff;  // blanco
 
-const gridHelper = new THREE.GridHelper(size, divisions, color1, color2);
-scene.add(gridHelper);
 
 document.body.appendChild(renderer.domElement);
 
