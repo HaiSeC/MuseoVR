@@ -2,6 +2,11 @@ import * as THREE from 'three';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+
 const scene = new THREE.Scene();
 
 const renderer = new THREE.WebGLRenderer();
@@ -12,11 +17,7 @@ renderer.setSize(window.innerWidth, innerHeight);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-
-
 document.body.appendChild(renderer.domElement);
-
-
 
 
 let lightCount = 6;
@@ -71,152 +72,64 @@ gltfLoader.load('../assets/glb/WholeMuseum.glb', (gltf) => {
 	});
 });
 
-let movement = {moveForward: false, moveBackward: false, moveLeft: false, moveRight: false};
+let AsyncFunction = Object.getPrototypeOf(async function(){}).constructor
+let getobject = new AsyncFunction('a','b','return await Meteorito.loadFragment(a,b)');
 
+let meterF;
 
-let moveSpeed = 1;
+let count = 0;
 
-document.addEventListener('keydown', onKeyDown, false);
-document.addEventListener('keyup', onKeyUp, false);
+let load = false;
+Meteorito.initializeEvents = function() {
+	if(!load){
+		let initObject = new AsyncFunction('a','return await Meteorito.initailize(a)');
+			initObject(new MTLLoader()).then(materials => {
+				getobject(new OBJLoader(), materials).then(object => {
+					meterF = object;
+					scene.add(meterF);
+					load = true;
+				});
+			});
+	
 
-function onKeyDown(event) {
-    switch (event.keyCode) {
-        case 87: // w
-			movement.moveForward=true;
-            break;
-        case 65: // a
-			movement.moveRight = true;
-            break;
-        case 83: // s
-			movement.moveBackward = true;
-            break;
-        case 68: // d
-			movement.moveLeft = true;
-            break;
-
-    }
-}
-
-function onKeyUp(event) {
-    switch(event.keyCode) {
-        case 87: // w
-			movement.moveForward = false;
-            break;
-        case 65: // a
-			movement.moveRight = false;
-            break;
-        case 83: // s
-			movement.moveBackward = false;
-            break;
-        case 68: // d
-			movement.moveLeft = false;
-            break;
-    }
-}
-
-function checkeys() {
-	let checker = false;
-	let remain = false;
-	Object.keys(movement).forEach(function(key){
-		
-		if(!movement[key] && !remain || movement[key] && !remain ){
-			remain = movement[key];
-		} else if (movement[key] && remain) {
-			checker = true;
-		}
-	});
-	if(checker){
-		moveSpeed = 0.45;
-	} else {
-		moveSpeed = 1;
 	}
 }
 
-function updatePosition() {
-	if(isCursorLocked){
-		checkeys();
-    if (movement.moveForward) {
-        camera.position.x -= moveSpeed * Math.sin(camera.rotation.y);
-        camera.position.z -= moveSpeed * Math.cos(camera.rotation.y);
-    }
-    if (movement.moveBackward) {
-        camera.position.x += moveSpeed * Math.sin(camera.rotation.y);
-        camera.position.z += moveSpeed * Math.cos(camera.rotation.y);
-    }
-    if (movement.moveLeft) {
-        camera.position.x -= moveSpeed * Math.sin(camera.rotation.y - Math.PI/2);
-        camera.position.z -= moveSpeed * Math.cos(camera.rotation.y - Math.PI/2);
-    }
-    if (movement.moveRight) {
-        camera.position.x -= moveSpeed * Math.sin(camera.rotation.y + Math.PI/2);
-        camera.position.z -= moveSpeed * Math.cos(camera.rotation.y + Math.PI/2);
-    }
 
-    // Limitar la posición de la cámara
-    if (camera.position.x < -148) camera.position.x = -148;
-    if (camera.position.x > 127) camera.position.x = 127;
-    if (camera.position.z < -170) camera.position.z = -170;
-    if (camera.position.z > 170) camera.position.z = 170;
+Meteorito.initializeEvents();
+
+let movement = {moveForward: false, moveBackward: false, moveLeft: false, moveRight: false, moveUp: false, moveDown: false};
+
+
+document.addEventListener('keydown', function(event){
+	Joystick.onKeyDown(event,movement);
+});
+document.addEventListener('keyup', function(event){
+	Joystick.onKeyUp(event,movement);
+});
+document.addEventListener('mousemove', function(event) {
+	Joystick.onDocumentMouseMove(event, camera, isCursorLocked);
+});
+
+Joystick.initializeEvents = function() {
+	Joystick.initialize();
+
 }
-}
+Joystick.initializeEvents();
 
-document.addEventListener('mousemove', onDocumentMouseMove);
+camera.position.set( -3, 30, 100);
 
-let isCursorLocked = false;
-
-	let mouseX = 0;
-	let mouseY = 0;
-
-
-function onDocumentMouseMove(event) {
-	if(isCursorLocked){
-
-		if (document.pointerLockElement === document.body) {
-			// Si se tiene acceso al cursor, actualiza la posición
-			mouseX += event.movementX/100;
-			mouseY += event.movementY/100;
-		
-		  }
-	const maxVerticalRotation = Math.PI/8;
-	const minVerticalRotation = -Math.PI/8;
-	const maxHorizontalRotation = Math.PI;
-	const minHorizontalRotation = -Math.PI;
-	
-  
-	camera.rotation.y += -(mouseX - lastMouseX);
-
-	if (camera.rotation.y > -1 && camera.rotation.y < 1) {
-		camera.rotation.x += -(mouseY - lastMouseY);
-	} else if ((camera.rotation.y < -1 && camera.rotation.y > -4) || (camera.rotation.y > 1 && camera.rotation.y < 4)) {
-		camera.rotation.x += (mouseY - lastMouseY);
+document.body.addEventListener('click', lockCursor);  
+  // desactivar la restricción del cursor al presionar escape
+document.addEventListener('keydown', (event) => {
+	if (event.key === 'Escape') {
+	  unlockCursor();
 	}
-  
-	// Limit vertical rotation
-	camera.rotation.x = Math.max(minVerticalRotation, Math.min(maxVerticalRotation, camera.rotation.x));
-  
-	// Limit horizontal rotation
-	camera.rotation.y = Math.max(minHorizontalRotation, Math.min(maxHorizontalRotation, camera.rotation.y));
-  	if (camera.rotation.y == maxHorizontalRotation) {
-		camera.rotation.y = minHorizontalRotation
-	} else if (camera.rotation.y == minHorizontalRotation){
-		camera.rotation.y = maxHorizontalRotation
-	}
-	
-	lastMouseX = mouseX;
-	lastMouseY = mouseY;
-	
-	}
-  }
+  });
 
-  let lastMouseX = 0;
-  let lastMouseY = 0;
-	
-  camera.lookAt(scene.position);
-  camera.position.set( -3, 30, 100);
-
-
+  let isCursorLocked = false;
   // bloquear el cursor dentro de un área específica
-function lockCursor() {
+  function lockCursor() {
 	// Pide el acceso al cursor del mouse
 	document.body.requestPointerLock();
 	  isCursorLocked = true;
@@ -229,25 +142,14 @@ function lockCursor() {
 	  isCursorLocked = false;
   }
 
-  document.body.addEventListener('click', lockCursor);
-  
-  // desactivar la restricción del cursor al presionar escape
-  document.addEventListener('keydown', (event) => {
-	if (event.key === 'Escape') {
-	  unlockCursor();
-	}
-  });
-
-
-  
-
-
 function animate() {
 	requestAnimationFrame( animate );
-
-	updatePosition();
-	console.log(camera.rotation.y)
+	Joystick.updatePosition(isCursorLocked, camera, movement);
 	renderer.render( scene, camera );
+	if (load) {
+		Meteorito.PfAutoRotate(meterF, count);
+	}
+
 };
 
 animate();
