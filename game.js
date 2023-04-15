@@ -149,6 +149,7 @@ function animate() {
 	if (load) {
 		Meteorito.PfAutoRotate(meterF, count);
 	}
+	//HDHDHDHDHCBCNCJF
 
 };
 
