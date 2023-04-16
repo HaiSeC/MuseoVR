@@ -6,6 +6,10 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
+import AmmoLib from "ammo-es";
+
+let Ammo, physicsWorld;
+
 
 const scene = new THREE.Scene();
 
@@ -150,6 +154,26 @@ function animate() {
 		Meteorito.PfAutoRotate(meterF, count);
 	}
 
+
 };
 
-animate();
+function setupPhysicsWorld() {
+    const collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+    const dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+    const overlappingPairCache = new Ammo.btDbvtBroadphase();
+    const solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+    physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+    physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
+}
+
+function init() {
+    AmmoLib().then((re) => {
+        Ammo = re;
+		console.log(Ammo);
+        setupPhysicsWorld();
+        animate();
+    });
+}
+
+init();
