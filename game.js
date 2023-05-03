@@ -44,7 +44,7 @@ const lightValues = [
 
 for (let i = 0; i < lightCount; i++){
 
-	// Positions evenly in a circle pointed at the origin
+	// Positions evenly in a circle pointed at the origin.   
 	const light = new THREE.PointLight(0xffffff, 1);
 	let lightX = lightDistance * Math.sin(Math.PI * 2 / lightCount * i);
 	let lightZ = lightDistance * Math.cos(Math.PI * 2 / lightCount * i);
@@ -55,7 +55,7 @@ for (let i = 0; i < lightCount; i++){
 	scene.add(light);
 	lights.push(light);
 
-	// Visual helpers to indicate light positions
+	// Visual helpers to indicate light positions   
 	scene.add(new THREE.PointLightHelper(light, .5, /*0xff9900*/lightValues[i]['colour']));
 
 }
