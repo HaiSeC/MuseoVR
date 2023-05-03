@@ -6,15 +6,29 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
-import AmmoLib from "ammo-es";
+import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-let Ammo, physicsWorld;
+
 
 //Create scene
 const scene = new THREE.Scene();
 
 //Create render
 const renderer = new THREE.WebGLRenderer();
+
+
+//document.body.appendChild( VRButton.createButton( renderer ) );
+
+const buttonVR = VRButton.createButton( renderer );
+
+console.log(typeof buttonVR)
+
+document.body.appendChild(buttonVR);
+
+
+renderer.xr.enabled = false;
+
+
 
 let environmentProxy = null;
 
@@ -23,6 +37,25 @@ renderer.setSize(window.innerWidth, innerHeight);
 
 //create camera
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+
+
+/********* Control VR **********/
+
+const controller1 = renderer.xr.getController(0);
+const controller2 = renderer.xr.getController(1);
+scene.add(controller1);
+scene.add(controller2);
+
+buttonVR.addEventListener('click', () => {
+
+	if(renderer.xr.enabled){
+		renderer.xr.enabled = false;
+		renderer.setAnimationLoop(animate());
+	} else {
+		
+		renderer.xr.enabled = true;
+	}
+  });
 
 //add renderer
 document.body.appendChild(renderer.domElement);
@@ -129,14 +162,30 @@ let movement = {moveForward: false, moveBackward: false, moveLeft: false, moveRi
 
 
 /*********** Reading keyboard and mouse *****************/
+
+let isCursorLocked = false;
+
+document.addEventListener('pointerlockchange', function() {
+	if (document.pointerLockElement === null) {
+		isCursorLocked = false;
+	} else {
+	isCursorLocked = true;
+	}
+  });
+
 document.addEventListener('keydown', function(event){
+	
+	if (isCursorLocked) {
 	Joystick.onKeyDown(event,movement);
+	}
 });
 document.addEventListener('keyup', function(event){
 	Joystick.onKeyUp(event,movement);
 });
 document.addEventListener('mousemove', function(event) {
-	Joystick.onDocumentMouseMove(event, camera, isCursorLocked);
+	if (isCursorLocked) {
+		Joystick.onDocumentMouseMove(event, camera, isCursorLocked);	
+	}
 });
 
 
@@ -153,57 +202,68 @@ Joystick.initializeEvents();
 
 camera.position.set( -3, 30, 100);
 
-document.body.addEventListener('click', lockCursor);  
+document.body.addEventListener('click', (event)=> {
+	lockCursor(event);
+});  
   // desactivar la restricción del cursor al presionar escape
-document.addEventListener('keydown', (event) => {
-	if (event.key === 'Escape') {
-	  unlockCursor();
-	}
-  });
 
-  let isCursorLocked = false;
+
   // bloquear el cursor dentro de un área específica
-  function lockCursor() {
-	// Pide el acceso al cursor del mouse
-	document.body.requestPointerLock();
-	  isCursorLocked = true;
+  function lockCursor(event) {
+	if (event.target === buttonVR || event.key === 'Escape') { // Si el evento se originó en el botón VR, no hacemos nada
+        return;
+    }
+
+    // Si el evento no se originó en el botón VR, ejecutamos el código para bloquear el cursor
+    if (isCursorLocked) return;
+
+    if (!renderer.xr.enabled) {
+		document.body.requestPointerLock();
+	}
+	
   }
   
   // desbloquear el cursor
   function unlockCursor() {
 	 // Libera el acceso al cursor del mouse
 	 document.exitPointerLock();
-	  isCursorLocked = false;
   }
 
+
+
+
+/*******************************/
+
 function animate() {
-	requestAnimationFrame( animate );
-	Joystick.updatePosition(isCursorLocked, camera, movement);
-	renderer.render( scene, camera );
-	if (load) {
-		Meteorito.PfAutoRotate(meterF, count);
+	if(!renderer.xr.enabled) {
+		console.log("state1");
+		requestAnimationFrame( animate );
+		Joystick.updatePosition(isCursorLocked, camera, movement);
+		spinFragment();
+		renderer.render( scene, camera );
+	
+	} else {
+		renderer.setAnimationLoop(() => {
+			console.log("state2");
+			spinFragment();
+		
+			renderer.render(scene, camera);
+			/*
+			controller1.update();
+			controller2.update();*/
+
+		  });
 	}
 
+	
 
 };
 
-function setupPhysicsWorld() {
-    const collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
-    const dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-    const overlappingPairCache = new Ammo.btDbvtBroadphase();
-    const solver = new Ammo.btSequentialImpulseConstraintSolver();
-
-    physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-    physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
+function spinFragment() {
+	if (load) {
+		Meteorito.PfAutoRotate(meterF, count);
+	}
 }
 
-function init() {
-    AmmoLib().then((re) => {
-        Ammo = re;
-		console.log(Ammo);
-        setupPhysicsWorld();
-        animate();
-    });
-}
+animate();
 
-init();
