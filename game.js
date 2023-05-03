@@ -10,20 +10,24 @@ import AmmoLib from "ammo-es";
 
 let Ammo, physicsWorld;
 
-
+//Create scene
 const scene = new THREE.Scene();
 
+//Create render
 const renderer = new THREE.WebGLRenderer();
 
 let environmentProxy = null;
 
+//set render's size
 renderer.setSize(window.innerWidth, innerHeight);
 
+//create camera
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
 
+//add renderer
 document.body.appendChild(renderer.domElement);
 
-
+/******************* LIGHTS *************************/
 let lightCount = 6;
 let lightDistance = 3000;
 
@@ -56,14 +60,21 @@ for (let i = 0; i < lightCount; i++){
 
 }
 
+/******************************************************* */
 
+
+/******************* Loading Objects **********************/
+
+//Create GLTLoader (.glb 3d objects loader)
 const gltfLoader = new GLTFLoader();
 
+//Load Museum
 gltfLoader.load('../assets/glb/WholeMuseum.glb', (gltf) => {
-	const root = gltf.scene;
-	root.scale.set(1,1,1);
-	scene.add(root);
+	const root = gltf.scene; //get the scene of the museum from glb
+	root.scale.set(1,1,1); // set the scale to 1,1,1
+	scene.add(root); //add the museum to the main scene
 
+	/*Still not sure about this xd */
 	gltf.scene.traverse(function (child) {
 		if ( child.isMesh ) {
 			if (child.name.includes('main')){
@@ -76,7 +87,10 @@ gltfLoader.load('../assets/glb/WholeMuseum.glb', (gltf) => {
 	});
 });
 
+//Creates a variable to use as an Async function constructor
 let AsyncFunction = Object.getPrototypeOf(async function(){}).constructor
+
+//Creates the function to load the fragment asynchronously
 let getobject = new AsyncFunction('a','b','return await Meteorito.loadFragment(a,b)');
 
 let meterF;
@@ -84,12 +98,18 @@ let meterF;
 let count = 0;
 
 let load = false;
+
+//Start the fragment load process
 Meteorito.initializeEvents = function() {
+	//Condition that reconognices the state of the page
 	if(!load){
+		//Gets the material of the fragment asynchronously
 		let initObject = new AsyncFunction('a','return await Meteorito.initailize(a)');
 			initObject(new MTLLoader()).then(materials => {
+				//load the fragment while sending the materials and the OBJLoader
 				getobject(new OBJLoader(), materials).then(object => {
 					meterF = object;
+					//adds the fragment to the scene || Still thinking "meterF" is unnecesary but it helps to avoid getting confused
 					scene.add(meterF);
 					load = true;
 				});
@@ -102,9 +122,13 @@ Meteorito.initializeEvents = function() {
 
 Meteorito.initializeEvents();
 
+/******************************************************/
+
+// hashmap to keep movement
 let movement = {moveForward: false, moveBackward: false, moveLeft: false, moveRight: false, moveUp: false, moveDown: false};
 
 
+/*********** Reading keyboard and mouse *****************/
 document.addEventListener('keydown', function(event){
 	Joystick.onKeyDown(event,movement);
 });
@@ -115,11 +139,17 @@ document.addEventListener('mousemove', function(event) {
 	Joystick.onDocumentMouseMove(event, camera, isCursorLocked);
 });
 
+
+/*********************************************** */
+
+/* Creating keyboard movement */
 Joystick.initializeEvents = function() {
 	Joystick.initialize();
 
 }
 Joystick.initializeEvents();
+
+/************************************************ */
 
 camera.position.set( -3, 30, 100);
 
@@ -153,7 +183,6 @@ function animate() {
 	if (load) {
 		Meteorito.PfAutoRotate(meterF, count);
 	}
-	//HDHDHDHDHCBCNCJF
 
 
 };
