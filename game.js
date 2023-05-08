@@ -378,7 +378,7 @@ for (let i = 0; i < lightCount; i++){
 	lights.push(light);
 
 	// Visual helpers to indicate light positions   
-	scene.add(new THREE.PointLightHelper(light, .5, /*0xff9900*/lightValues[i]['colour']));
+	scene.add(new THREE.PointLightHelper(light, .5, /*0xff9900/lightValues[i]['colour']));
 
 }
 
@@ -396,7 +396,7 @@ gltfLoader.load('../assets/glb/WholeMuseum.glb', (gltf) => {
 	root.scale.set(1,1,1); // set the scale to 1,1,1
 	scene.add(root); //add the museum to the main scene
 
-	/*Still not sure about this xd */
+	/*Still not sure about this xd 
 	gltf.scene.traverse(function (child) {
 		if ( child.isMesh ) {
 			if (child.name.includes('main')){
