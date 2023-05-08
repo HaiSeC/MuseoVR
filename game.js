@@ -262,7 +262,7 @@ function animate() {
 
 function render() {
 	spinFragment();
- if (renderer.xr.isPresenting) {
+ if (!renderer.xr.isPresenting) {
    Joystick.updatePosition(isCursorLocked, camera, movement);
  }
 
