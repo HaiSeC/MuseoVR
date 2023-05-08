@@ -537,9 +537,9 @@ function animate() {
 			spinFragment();
 		
 			renderer.render(scene, camera);
-			/*
+			
 			controller1.update();
-			controller2.update();*/
+			controller2.update();
 
 		  });
 	}
