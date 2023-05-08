@@ -328,7 +328,7 @@ renderer.setSize(window.innerWidth, innerHeight);
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
 
 
-/********* Control VR **********/
+/********* Control VR *********
 
 const controller1 = renderer.xr.getController(0);
 const controller2 = renderer.xr.getController(1);
@@ -349,7 +349,7 @@ buttonVR.addEventListener('click', () => {
 //add renderer
 document.body.appendChild(renderer.domElement);
 
-/******************* LIGHTS *************************/
+/******************* LIGHTS ************************
 let lightCount = 6;
 let lightDistance = 3000;
 
@@ -382,10 +382,10 @@ for (let i = 0; i < lightCount; i++){
 
 }
 
-/******************************************************* */
+/******************************************************* 
 
 
-/******************* Loading Objects **********************/
+/******************* Loading Objects *********************
 
 //Create GLTLoader (.glb 3d objects loader)
 const gltfLoader = new GLTFLoader();
@@ -444,13 +444,13 @@ Meteorito.initializeEvents = function() {
 
 Meteorito.initializeEvents();
 
-/******************************************************/
+/*****************************************************
 
 // hashmap to keep movement
 let movement = {moveForward: false, moveBackward: false, moveLeft: false, moveRight: false, moveUp: false, moveDown: false};
 
 
-/*********** Reading keyboard and mouse *****************/
+/*********** Reading keyboard and mouse ****************
 
 let isCursorLocked = false;
 
@@ -478,16 +478,16 @@ document.addEventListener('mousemove', function(event) {
 });
 
 
-/*********************************************** */
+/*********************************************** 
 
-/* Creating keyboard movement */
+/* Creating keyboard movement 
 Joystick.initializeEvents = function() {
 	Joystick.initialize();
 
 }
 Joystick.initializeEvents();
 
-/************************************************ */
+/************************************************ 
 
 camera.position.set( -3, 30, 100);
 
@@ -521,7 +521,7 @@ document.body.addEventListener('click', (event)=> {
 
 
 
-/*******************************/
+/******************************
 
 function animate() {
 	if(!renderer.xr.enabled) {
