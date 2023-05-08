@@ -262,9 +262,10 @@ function animate() {
 
 function render() {
 	spinFragment();
- if(!VR){
+ if (renderer.xr.isPresenting) {
    Joystick.updatePosition(isCursorLocked, camera, movement);
-}
+ }
+
 	renderer.render( scene, camera );
 
 }
