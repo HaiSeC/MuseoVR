@@ -77,9 +77,9 @@ var Joystick = {
 			}
 		});
 		if(checker){
-			this.moveSpeed = 0.45;
+			this.moveSpeed = 0.25;
 		} else {
-			this.moveSpeed = 1;
+			this.moveSpeed = 0.5;
 		}
 	},
 
