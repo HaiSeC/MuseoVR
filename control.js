@@ -2,7 +2,7 @@ var Joystick = {
 	property: 10,
 
 	initialize: function() {
-		this.moveSpeed = 1;
+		this.moveSpeed = 0.1;
 		this.movement = {moveForward: false, moveBackward: false, moveLeft: false, moveRight: false, moveUp: false, moveDown: false};
 		this.mouseX = 0;
 		this.mouseY = 0;
@@ -77,9 +77,9 @@ var Joystick = {
 			}
 		});
 		if(checker){
-			this.moveSpeed = 0.25;
+			this.moveSpeed = 0.1;
 		} else {
-			this.moveSpeed = 0.5;
+			this.moveSpeed = 0.1;
 		}
 	},
 
