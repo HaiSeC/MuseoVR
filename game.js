@@ -7,6 +7,9 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js';
@@ -146,13 +149,35 @@ for (let i = 0; i < lightCount; i++){
 const gltfLoader = new GLTFLoader();
 
 //Load Museum
-gltfLoader.load('../assets/glb/WholeMuseum.glb', (gltf) => {
+/*gltfLoader.load('../assets/glb/WholeMuseum.glb', (gltf) => {
+	
 	const root = gltf.scene; //get the scene of the museum from glb
 	root.scale.set(0.2, 0.2, 0.2); // set the scale to 1,1,1
 	scene.add(root); //add the museum to the main scene
 
-	/*Still not sure about this xd */
+	/*Still not sure about this xd /
 	gltf.scene.traverse(function (child) {
+		if (child.isMesh) {
+			if (child.name.includes('main')) {
+				child.castShadow = true;
+				child.receiveShadow = true;
+			} else if (child.name.includes('Cube')) {
+				//child.material.visible = true;
+				environmentProxy = child;
+			}
+		}
+	});
+});*/
+
+const fbxLoader = new FBXLoader();
+
+	fbxLoader.load('../assets/fbx/SueloMusero/SueloMuseoBlender.fbx', (gltf) => {
+		const root = gltf; //get the scene of the museum from glb
+	root.scale.set(0.5, 0.5, 0.5); // set the scale to 1,1,1
+	scene.add(root); //add the museum to the main scene
+
+	/*Still not sure about this xd */
+	root.traverse(function (child) {
 		if (child.isMesh) {
 			if (child.name.includes('main')) {
 				child.castShadow = true;

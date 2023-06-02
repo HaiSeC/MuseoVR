@@ -27,7 +27,7 @@ var Meteorito = {
                 objLoader.load('../assets/Fragmento_Principal/Fragmento_Principal.obj', function(object) {
                     object.scale.set(1,1,1);
                     object.rotation.x = 180;
-                    object.position.set(-1,46,15);
+                    object.position.set(0,3,0);
                     object;
                     resolve(object); 
                 })
