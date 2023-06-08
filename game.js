@@ -38,6 +38,11 @@ let movement = { moveForward: false, moveBackward: false, moveLeft: false, moveR
 let isCursorLocked = false;
 
 
+/*************mundo físico**************/
+
+var world;
+
+
 function INIT() {
 	//Create scene
 	scene = new THREE.Scene();
@@ -59,26 +64,38 @@ function INIT() {
 
 
 	camera.position.set(0, 5, 20);
+	world = new CANNON.World();
+	world.gravity.set(0, -9.8, 0); // Establece la gravedad
 
+	// Configura el solucionador de colisiones
+	var solver = new CANNON.GSSolver();
+	world.defaultContactMaterial.contactEquationStiffness = 1e9;
+	world.defaultContactMaterial.contactEquationRelaxation = 4;
+	solver.iterations = 7;
+	solver.tolerance = 0.1;
+	var split = true;
+	if (split)
+		world.solver = new CANNON.SplitSolver(solver);
+	else
+		world.solver = solver;
 
 	setVR();
 	setEvents();
-	createPhysics();
+	loadAll();
 	Joystick.initializeEvents();
 
 
 }
-
-function createPhysics() {
-
-/* Codigo de fisicas */
-
-
-
-/****Carga de modelos ****/
-	loadFBX();
-	Meteorito.initializeEvents();
+function createFisicbody(object,masa,vector){
+	var mass = masa; // Masa del objeto
+    var shape = new CANNON.Box(vector); // Forma del objeto (puede ajustarse según el modelo)
+    var body = new CANNON.Body({ mass: mass, shape: shape });
+    body.position.copy(object.position); // Copia la posición del objeto Three.js al cuerpo Cannon.js
+    world.addBody(body);
+	return body;
 }
+
+
 
 function setVR() {
 	renderer.xr.enabled = true;
@@ -254,8 +271,9 @@ function loadFBX() {
 	fbxLoader.load('../assets/fbx/SueloMusero/SueloMuseoBlender.fbx', (gltf) => {
 		const root = gltf; //get the scene of the museum from glb
 		root.scale.set(0.5, 0.5, 0.5); // set the scale to 1,1,1
-		scene.add(root); //add the museum to the main scene
 
+		scene.add(root); //add the museum to the main scene
+		root.userData= createFisicbody(root,0,new CANNON.Vec3(0.5, 0.01, 0.5));
 		/*Still not sure about this xd */
 		root.traverse(function (child) {
 			if (child.isMesh) {
@@ -283,8 +301,10 @@ Meteorito.initializeEvents = function () {
 			//load the fragment while sending the materials and the OBJLoader
 			getobject(new OBJLoader(), materials).then(object => {
 				meterF = object;
+				meterF.name = "isSolid"
 				//adds the fragment to the scene || Still thinking "meterF" is unnecesary but it helps to avoid getting confused
 				scene.add(meterF);
+				meterF.userData= createFisicbody(meterF,100,new CANNON.Vec3(1, 1, 1));
 				load = true;
 			});
 		});
@@ -316,12 +336,25 @@ function unlockCursor() {
 
 INIT();
 function animate() {
-
+	
 	renderer.setAnimationLoop(render);
 
 }
 
+function loadAll(){
+	loadFBX()
+	Meteorito.initializeEvents();
+}
+
 function render() {
+	console.log(world);
+	world.step(1 / 60);
+	scene.traverse(function (object) {
+        if (object.name == 'isSolid') {
+            object.position.copy(object.userData.position);
+            object.quaternion.copy(object.userData.quaternion);
+        }
+    });
 	spinFragment();
 	if (!renderer.xr.isPresenting) {
 		Joystick.updatePosition(isCursorLocked, camera, movement);
@@ -336,5 +369,4 @@ function spinFragment() {
 		Meteorito.PfAutoRotate(meterF, count);
 	}
 }
-
 animate();
