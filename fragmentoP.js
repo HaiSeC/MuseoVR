@@ -2,13 +2,14 @@ var Meteorito = {
     property: 10,
 
 
-    initailize: function(mtlLoader){
+    initailize: function(mtlLoader, path){
         return new Promise(resolve => {
             this.mtlLoader = mtlLoader;
             this.axisZ = 0.001;
             this.axisY = 0.005;
             this.axisX = 0.005;
-            this.mtlLoader.load('../assets/Fragmento_Principal/Fragmento_Principal.mtl', function(materials) {
+            console.log(path)
+            this.mtlLoader.load(path, function(materials) {
             materials.preload();
             this.materials = materials;
             resolve(this.materials);
@@ -21,10 +22,10 @@ var Meteorito = {
         
     },
 
-    loadFragment: function(objLoader, materials) {
+    loadFragment: function(objLoader, materials, path) {
             return new Promise(resolve => {
                 objLoader.setMaterials(materials);
-                objLoader.load('../assets/Fragmento_Principal/Fragmento_Principal.obj', function(object) {
+                objLoader.load(path, function(object) {
                     object.scale.set(1,1,1);
                     object.rotation.x = 180;
                     object.position.set(0,3,0);
