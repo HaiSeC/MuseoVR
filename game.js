@@ -26,9 +26,9 @@ let environmentProxy = null;
 let AsyncFunction = Object.getPrototypeOf(async function () { }).constructor
 
 //Creates the function to load the fragment asynchronously
-let initObject = new AsyncFunction('a','b', 'return await Meteorito.initailize(a,b)');
+let initObject = new AsyncFunction('a', 'b', 'return await Meteorito.initailize(a,b)');
 
-let getobject = new AsyncFunction('a', 'b','c', 'return await Meteorito.loadFragment(a,b,c)');
+let getobject = new AsyncFunction('a', 'b', 'c', 'return await Meteorito.loadFragment(a,b,c)');
 
 let meterF;
 
@@ -75,22 +75,18 @@ async function INIT() {
 
 
 
-	initGraphics();
+	await initGraphics();
 
-	//createPhysics();
 	//lights()
 	setVR();
 
 	setEvents();
 
-	//await loadFBX('../assets/fbx/SueloMusero/SueloMuseoBlender.fbx', 0, true, { x: 0.08, y: 0.1, z: 0.08 });
-	//await loadFBX('../assets/fbx/MuseoBlender.fbx', 0, false)
-
-	await loadGBL('../assets/glb/WholeMuseum.gltf',  0, true, { x: 1000, y: 10, z: 10 });
+	await loadGBL('../assets/glb/WholeMuseum.gltf', 0, true, { x: 1000, y: 10, z: 10 });
 	await loadGBL('../assets/glb/WholeMuseum2.gltf');
 	await Meteorito.initializeEvents();
 	Joystick.initializeEvents();
-
+	createScenePhysics();
 
 }
 
@@ -113,33 +109,12 @@ function initGraphics() {
 
 
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
-	//renderer.toneMappingExposure = 0.17;
-//	renderer.toneMappingExposure = 0.25;
+	renderer.toneMappingExposure = 0.17;
 
 
-	camera.position.set(0, 5,10);
+	camera.position.set(0, 5, 10);
 }
 
-function createPhysics() {
-	// Initialize physics engine
-	collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
-	dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-	broadphase = new Ammo.btDbvtBroadphase();
-	solver = new Ammo.btSequentialImpulseConstraintSolver();
-	physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
-	physicsWorld.setGravity(new Ammo.btVector3(0, - gravityConstant, 0));
-
-	transformAux1 = new Ammo.btTransform();
-	tempBtVec3_1 = new Ammo.btVector3(0, 0, 0);
-
-	/* Codigo de fisicas */
-
-
-
-	/****Carga de modelos ****/
-
-
-}
 
 function setVR() {
 	renderer.xr.enabled = true;
@@ -290,89 +265,81 @@ async function loadGBL(path, mass, physics, scale) {
 		gltfLoader.loadAsync([path])
 	])
 
-//	const models = museoData.scene.children
+	//	const models = museoData.scene.children
 	const modelsData = museoData.scene
 
 	let models = []
 	modelsData.traverse(modelData => {
-		if ( modelData.name == 'Scene' ) {
+		if (modelData.name == 'Scene') {
 			models.push(modelData)
-		} 
+		}
 	})
-	
-	console.log(models)
+
 	for (let index = 0; index < models.length; index++) {
 		const model = models[index];
 
 		if (physics) {
 			addPhysics(model, mass)
 		}
-		console.log(model)
-			scene.add(model)
+		scene.add(model)
+	}
+
+}
+
+function createScenePhysics() {
+	let models = [];
+	//pBodie.push({ object: mesh, objectBody: body })
+
+	const shape = new Ammo.btBoxShape(new Ammo.btVector3(1, 2, 1));
+	console.log(shape)
+	const transform = new Ammo.btTransform();
+	const position = camera.position;
+	const quaternion = camera.quaternion;
+	transform.setIdentity();
+	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+
+	const localInertia = new Ammo.btVector3(0, 0, 0);
+	shape.calculateLocalInertia(1, localInertia);
+
+	const motionState = new Ammo.btDefaultMotionState(transform);
+	const rbInfo = new Ammo.btRigidBodyConstructionInfo(100, motionState, shape, localInertia);
+	const body = new Ammo.btRigidBody(rbInfo);
+
+	pBodie.push({ object: camera, objectBody: body })
+
+	world.addRigidBody(body);
+
+	scene.traverse((mesh) => {
+
+		
+		if (mesh.isMesh && mesh.name != 'Piso' && !mesh.name.includes("Paredes") && !mesh.name.includes("cuadro") && !mesh.name.includes("Puertas") && !mesh.name.includes("Cube") && !mesh.name.includes("Cylinder") && !mesh.name.includes("Sphere") && !mesh.name.includes("Circle") && !mesh.name.includes("Rings")) {
+			
+			models.push(mesh);
+		} else if (mesh.isGroup && !mesh.name.includes("Paredes") && !mesh.name.includes("cuadro") && mesh.name != 'Scene' && mesh.name != '' && mesh.name != 'EntradaPrincipal' && mesh.name != 'baseDog' && mesh.name != 'MesaZinc' && mesh.name != 'MesaMicroscopio') {
+			console.log(mesh.name)
+			models.push(mesh);
+
+		}
+	})
+
+	for (let index = 0; index < models.length; index++) {
+		const model = models[index];
+		addPhysics2(model, 0)
 	}
 
 }
 
 
-function loadOBJ(path, mass, physics, scale) {
-	initObject(new MTLLoader(), '../assets/obj/MuseoBlender.mtl').then(materials => {
-		//load the fragment while sending the materials and the OBJLoader
-		getobject(new OBJLoader(), materials, path).then(object => {
-			object.rotation.set(0,0,0)
-			object.position.set(0,0,0)
-			if (physics) {
-				addPhysics(object, mass)
-			}
-			//adds the fragment to the scene || Still thinking "meterF" is unnecesary but it helps to avoid getting confused
-			scene.add(object);
-
-		});
-	});
-
-}
-
-/******************************************************* */
-
-function loadFBX(path, mass, physics, scale) {
-	const fbxLoader = new FBXLoader();
-
-	fbxLoader.load(path, (gltf) => {
-		const root = gltf; //get the scene of the museum from glb
-		root.scale.set(1, 1, 1); // set the scale to 1,1,1
-		scene.add(root); //add the museum to the main scene
-		
-		/*Still not sure about this xd */
-		root.traverse(function (child) {
-			if (child.isMesh) {
-				if (physics) {
-					addPhysics(child, mass)
-				}
-				if (child.name.includes('main')) {
-					child.castShadow = true;
-					child.receiveShadow = true;
-				} else if (child.name.includes('Cube')) {
-					//child.material.visible = true;
-					environmentProxy = child;
-				}
-			}
-		});
-	});
-
-}
-
-
-
 function addPhysics(mesh, mass) {
 	const boundingBox = new THREE.Box3().setFromObject(mesh);
-	console.log(boundingBox)
-	
+
 	const size = boundingBox.getSize(new THREE.Vector3());
 
 	// Next, create a physics body in Ammo.js with the same size
 	const width = size.x;
 	const height = size.y;
 	const depth = size.z;
-	const shape = new Ammo.btBoxShape(new Ammo.btVector3(width , height/2, depth ));
+	const shape = new Ammo.btBoxShape(new Ammo.btVector3(width, height / 2, depth));
 
 	// Create a wireframe geometry based on the shape
 	const wireframeGeometry = new THREE.WireframeGeometry(new THREE.BoxGeometry(width, height, depth));
@@ -386,13 +353,69 @@ function addPhysics(mesh, mass) {
 	// Add the wireframe to the scene
 	scene.add(wireframe);
 
+
+	const friction = 0.5; // Adjust the friction value as per your requirements
+    const rollingFriction = 0.1; // Adjust the rolling friction value as per your requirements
+
+
+	// Finally, create a physics object and add it to the world
+	const transform = new Ammo.btTransform();
+    const position = mesh.position;
+    const quaternion = mesh.quaternion;
+    transform.setIdentity();
+    transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+
+    const localInertia = new Ammo.btVector3(0, 0, 0);
+    shape.calculateLocalInertia(mass, localInertia);
+
+    const motionState = new Ammo.btDefaultMotionState(transform);
+    const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
+    const body = new Ammo.btRigidBody(rbInfo);
+
+    // Set the friction properties on the rigidbody
+    body.setFriction(friction);
+    body.setRollingFriction(rollingFriction);
+
+
+	pBodie.push({ object: mesh, objectBody: body })
+
+	world.addRigidBody(body);
+	return body;
+}
+
+function addPhysics2(mesh, mass) {
+	const boundingBox = new THREE.Box3().setFromObject(mesh);
+
+	const size = boundingBox.getSize(new THREE.Vector3());
+
+	// Next, create a physics body in Ammo.js with the same size
+	const width = size.x;
+	const height = size.y;
+	const depth = size.z;
+	const shape = new Ammo.btBoxShape(new Ammo.btVector3(width/3, height/2, depth/2));
+
 	// Finally, create a physics object and add it to the world
 	const transform = new Ammo.btTransform();
 	const position = mesh.position;
 	const quaternion = mesh.quaternion;
 	transform.setIdentity();
-	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-	//transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+	transform.setOrigin(new Ammo.btVector3(position.x+0.5, position.y, position.z));
+
+	transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+
+	// Create a wireframe geometry based on the shape
+	const wireframeGeometry = new THREE.WireframeGeometry(new THREE.BoxGeometry(width/2, height, depth));
+	const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+	const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+
+
+	// Set the position and rotation of the wireframe to match the mesh
+	wireframe.position.set(transform.getOrigin().x(), transform.getOrigin().y(), transform.getOrigin().z());
+	//wireframe.quaternion.copy(mesh.quaternion);
+
+	// Add the wireframe to the scene
+	scene.add(wireframe);
+
 
 	const localInertia = new Ammo.btVector3(0, 0, 0);
 	shape.calculateLocalInertia(mass, localInertia);
@@ -401,12 +424,11 @@ function addPhysics(mesh, mass) {
 	const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
 	const body = new Ammo.btRigidBody(rbInfo);
 
-	pBodie.push({ object: mesh, objectBody: body })
+	pBodie.push({ objectBody: body })
 
 	world.addRigidBody(body);
 	return body;
 }
-
 
 //Start the fragment load process
 Meteorito.initializeEvents = function () {
@@ -417,10 +439,10 @@ Meteorito.initializeEvents = function () {
 			//load the fragment while sending the materials and the OBJLoader
 			getobject(new OBJLoader(), materials, '../assets/Fragmento_Principal/Fragmento_Principal.obj').then(object => {
 				meterF = object;
-				meterF.position.set(0, 5, 2)
+				meterF.position.set(0, 5, -1)
 				meterF.userData = addPhysics(meterF, 10000)
 				meterF.name = meterF.children[0].name
-				
+
 				//adds the fragment to the scene || Still thinking "meterF" is unnecesary but it helps to avoid getting confused
 				scene.add(meterF);
 
@@ -446,12 +468,6 @@ function lockCursor(event) {
 
 }
 
-// desbloquear el cursor
-function unlockCursor() {
-	// Libera el acceso al cursor del mouse
-	document.exitPointerLock();
-}
-
 
 //INIT();
 function animate() {
@@ -472,24 +488,44 @@ function render() {
 	world.stepSimulation(1 / 120, 10); // Actualiza la simulación física (60 FPS)
 	// Actualiza la posición y rotación de los objetos según sus cuerpos rígidos
 	pBodie.forEach((meshData) => {
-		const body = meshData.objectBody;
-		const motionState = body.getMotionState();
-		if (motionState) {
-			const transform = new Ammo.btTransform();
-			motionState.getWorldTransform(transform);
+		if (meshData.object) {
+			if (meshData.object.isCamera) {
+				let cam = meshData.object;
+				if (!renderer.xr.isPresenting) {
+					const body = meshData.objectBody;
+					const motionState = body.getMotionState();
+					let update = false;
+					Object.keys(movement).map(movekey => {
+						if (movement[movekey] == true){
+							update = true;
+						}		
+					})
+					//if(update) {
 
-			const position = transform.getOrigin();
-			const rotation = transform.getRotation();
-			meshData.object.position.set(position.x(), position.y(), position.z() + 0.7);
-			//meshData.object.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+						Joystick.updatePosition(isCursorLocked, cam, movement, motionState, body );
+						//checkMovementArea(cam.position)
+						//meshData.object = cam;
+					//}					
+				}
+			} else {
+				const body = meshData.objectBody;
+				const motionState = body.getMotionState();
+				if (motionState) {
+					const transform = new Ammo.btTransform();
+					motionState.getWorldTransform(transform);
 
+					const position = transform.getOrigin();
+					const rotation = transform.getRotation();
+					meshData.object.position.set(position.x(), position.y(), position.z());
+					//meshData.object.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+
+				}
+			}
 		}
 	})
-	
+
 	spinFragment();
-	if (!renderer.xr.isPresenting) {
-		Joystick.updatePosition(isCursorLocked, camera, movement);
-	}
+
 
 	renderer.render(scene, camera);
 
@@ -501,4 +537,29 @@ function spinFragment() {
 	}
 }
 
-//animate();
+function checkMovementArea(position) {
+	const raycaster = new THREE.Raycaster();
+  const direction = new THREE.Vector3(0, -1, 0); // Cast ray downwards (adjust the direction as needed)
+  raycaster.set(position, direction);
+
+  // Set the maximum distance for the raycast based on your scene's dimensions
+  const maxDistance = 10; // Adjust this value to fit your scene
+  raycaster.far = maxDistance;
+
+  // Create an array to store the valid rigid bodies for raycasting
+  const validRigidBodies = pBodie
+    .filter(entry => entry.object !== undefined && entry.object !== null)
+    .map(entry => entry.object);
+
+  // Perform the raycast against the valid rigid bodies
+  const intersects = raycaster.intersectObjects(validRigidBodies);
+
+  // Process the raycast results
+  if (intersects.length > 0) {
+    // The ray hit a valid rigid body, you can check the intersects array for more details
+    console.log("Raycast hit rigid body:", intersects[0].object);
+  } else {
+    // The ray did not hit any valid rigid body, the area is clear for movement
+    console.log("Area is clear for movement");
+  }
+  }
